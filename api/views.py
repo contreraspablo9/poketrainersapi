@@ -1,38 +1,38 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import status
 
 # from api import serializers
 import json 
-
-def error_output(message, values = []):
-    return {
-        'message':message, 
-        'error': True, 
-        'values': values
-    }
-
-def succes_output(message, values): 
-    return {
-        'message':message, 
-        'error': False, 
-        'values': values
-    }
+from api import models, serializers
 
 class Trainers(APIView): 
     ''' Pokemon trainers administration '''
-    def get(self, request): 
-        #retrieve members of a team
+    def get(self, request, pk=None, alias=None): 
+        many = False
+        if pk is not None: 
+            try: 
+                trainer_data = models.TrainersDataT.objects.get(pk=pk)
+            except models.TrainersDataT.DoesNotExist: 
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        elif alias is not None: 
+            try: 
+                trainer_data = models.TrainersDataT.objects.get(alias=alias)
+            except models.TrainersDataT.DoesNotExist: 
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else: 
+            trainer_data = models.TrainersDataT.objects.all().values()
+            many = True
 
-        #retrieve teams of a trainer
-
-        #retrieve all trainers
-        return Response()
+        trainer_data = serializers.TrainerSerializer(trainer_data, many=many).data
+        return Response(trainer_data)
 
     def post(self, request): 
 
         return Response()
 
-    def put(self, request): 
+    def put(self, request):
+
         return Response()
 
     def delete(self, request): 
@@ -42,11 +42,7 @@ class Trainers(APIView):
 class Teams(APIView): 
     ''' Pokemon teams administration '''
     def get(self, request): 
-        #retrieve members of a team
-
-        #retrieve teams of a trainer
-
-        #retrieve all trainers
+        
         return Response()
 
     def post(self, request): 
@@ -63,11 +59,7 @@ class Teams(APIView):
 class TeamMembers(APIView): 
     ''' Pokemon team members administration '''
     def get(self, request): 
-        #retrieve members of a team
-
-        #retrieve teams of a trainer
-
-        #retrieve all trainers
+        
         return Response()
 
     def post(self, request): 
