@@ -2,7 +2,7 @@ from django.db import models
 
 
 class TeamMembersT(models.Model):
-    member_id = models.IntegerField(primary_key=True)
+    member_id = models.AutoField(primary_key=True)
     pokemon_id = models.IntegerField()
     team_id = models.IntegerField()
 
@@ -12,9 +12,9 @@ class TeamMembersT(models.Model):
 
 
 class TeamsDataT(models.Model):
-    team_id = models.IntegerField(primary_key=True)
+    team_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now=True)
     trainer_id = models.IntegerField()
 
     class Meta:
@@ -23,11 +23,11 @@ class TeamsDataT(models.Model):
 
 
 class TrainersDataT(models.Model):
-    trainer_id = models.IntegerField(primary_key=True)
+    trainer_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45)
     alias = models.CharField(max_length=45)
     age = models.IntegerField()
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = False

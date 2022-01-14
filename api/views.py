@@ -1,12 +1,13 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
 
 # from api import serializers
 import json 
 from api import models, serializers
 
-class Trainers(APIView): 
+class Trainers(APIView, LimitOffsetPagination): 
     ''' Pokemon trainers administration '''
     def get(self, request, pk=None, alias=None): 
         many = False
@@ -23,13 +24,27 @@ class Trainers(APIView):
         else: 
             trainer_data = models.TrainersDataT.objects.all().values()
             many = True
-
-        trainer_data = serializers.TrainerSerializer(trainer_data, many=many).data
+        if pk is None and alias is None: 
+            paginator = LimitOffsetPagination()
+            results = paginator.paginate_queryset(trainer_data, request)
+        else: 
+            results = trainer_data
+        trainer_data = serializers.TrainerSerializer(results, many=many).data
         return Response(trainer_data)
 
-    def post(self, request): 
-
-        return Response()
+    def post(self, request, **kwargs): 
+        serializer = serializers.TrainerSerializer(data=request.data)
+        if serializer.is_valid():
+            print(serializer.data)
+            new_trainer = models.TrainersDataT(
+                name=serializer.data['name'], 
+                alias=serializer.data['alias'], 
+                age=serializer.data['age']
+            )
+            new_trainer.save()
+            new_trainer = serializers.TrainerSerializer(new_trainer).data
+            return Response(new_trainer, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
 
