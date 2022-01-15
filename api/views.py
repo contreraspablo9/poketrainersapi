@@ -1,14 +1,13 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 
-# from api import serializers
 import json 
 from api import models, serializers
 from django.db.models import Count
 
-class Trainers(APIView, LimitOffsetPagination): 
+class Trainers(APIView): 
     ''' Pokemon trainers administration '''
     def get(self, request, pk=None, alias=None): 
         many = False
@@ -31,12 +30,19 @@ class Trainers(APIView, LimitOffsetPagination):
             results = trainer_data.annotate(teams_quantity=Count('teamsdatat__team_id')).order_by('trainer_id')
             many = True
         
-        if many: 
-            paginator = LimitOffsetPagination()
+        paginator = PageNumberPagination()
+        if many:
             results = paginator.paginate_queryset(results, request)
         
         results = serializers.TrainerSerializer(results, many=many).data
-        return Response(results)
+        return Response(
+            {
+                'count':models.TrainersDataT.objects.count(),
+                'next':paginator.get_next_link(),
+                'previous':paginator.get_previous_link(),
+                'values':results, 
+            }
+        )
 
     def post(self, request, **kwargs): 
         serializer = serializers.TrainerSerializer(data=request.data)
@@ -76,7 +82,7 @@ class Teams(APIView):
             teams_data = models.TeamsDataT.objects.all().values()
             many = True
         if many: 
-            paginator = LimitOffsetPagination()
+            paginator = PageNumberPagination()
             results = paginator.paginate_queryset(teams_data, request)
         else: 
             results = teams_data
@@ -121,7 +127,7 @@ class TeamMembers(APIView):
             team_member = models.TeamMembersT.objects.all().values()
             many = True
         if many: 
-            paginator = LimitOffsetPagination()
+            paginator = PageNumberPagination()
             results = paginator.paginate_queryset(team_member, request)
         else: 
             results = team_member
