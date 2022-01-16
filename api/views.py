@@ -5,43 +5,41 @@ from rest_framework.pagination import PageNumberPagination
 
 import json 
 from api import models, serializers
-from django.db.models import Count
+from django.db.models import Count, Value, functions, TextField
 
-class Trainers(APIView): 
+from api import functions as fn
+
+class Trainers(APIView, PageNumberPagination): 
     ''' Pokemon trainers administration '''
     def get(self, request, pk=None, alias=None): 
-        many = False
         if pk is not None: 
             try: 
                 trainer_data = models.TrainersDataT.objects.get(pk=pk)
-                trainer_data.teams_quantity = len(models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id))
-                results = trainer_data
+                trainer_data.teams_quantity = models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id).count()
+                results = [trainer_data]
             except models.TrainersDataT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
         elif alias is not None: 
             try: 
                 trainer_data = models.TrainersDataT.objects.get(alias=alias)
-                trainer_data.teams_quantity = len(models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id))
-                results = trainer_data
+                trainer_data.teams_quantity = models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id).count()
+                results = [trainer_data]
             except models.TrainersDataT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else: 
             trainer_data = models.TrainersDataT.objects.all()
-            results = trainer_data.annotate(teams_quantity=Count('teamsdatat__team_id')).order_by('trainer_id')
-            many = True
+            results = trainer_data.annotate(teams_quantity=Count('teams__team_id')).order_by('trainer_id')
         
-        paginator = PageNumberPagination()
-        if many:
-            results = paginator.paginate_queryset(results, request)
-        
-        results = serializers.TrainerSerializer(results, many=many).data
+        results = self.paginate_queryset(results, request)
+        results = serializers.TrainerSerializer(results, many=True).data
         return Response(
             {
-                'count':models.TrainersDataT.objects.count(),
-                'next':paginator.get_next_link(),
-                'previous':paginator.get_previous_link(),
+                'count':self.page.paginator.count,
+                'next':self.get_next_link(),
+                'previous':self.get_previous_link(),
                 'values':results, 
-            }
+            }, 
+            status=status.HTTP_200_OK
         )
 
     def post(self, request, **kwargs): 
@@ -58,7 +56,12 @@ class Trainers(APIView):
             )
             new_trainer.save()
             new_trainer = serializers.TrainerSerializer(new_trainer).data
-            return Response(new_trainer, status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    'values':new_trainer
+                }, 
+                status=status.HTTP_201_CREATED
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, **kwargs):
@@ -69,7 +72,7 @@ class Trainers(APIView):
         print(request)
         return Response()
 
-class Teams(APIView): 
+class Teams(APIView, PageNumberPagination): 
     ''' Pokemon teams administration '''
     def get(self, request, pk=None): 
         many = False
@@ -114,29 +117,58 @@ class Teams(APIView):
         
         return Response()
 
-class TeamMembers(APIView): 
+class TeamMembers(APIView,PageNumberPagination): 
     ''' Pokemon team members administration '''
-    def get(self, request, pk=None): 
-        many = False
+    def get(self, request, pk=None, name=None): 
+        pokeapi_url = 'https://pokeapi.co/api/v2/pokemon/'
+        pokemon_data = fn.apicall(pokeapi_url + '?limit=1200')['results']
+
         if pk is not None: 
             try: 
-                team_member = models.TeamMembersT.objects.get(pk=pk)
-            except models.TeamMembersT.DoesNotExist:
+                member_data = models.TeamMembersT.objects.get(pk=pk)
+                # member_data.name = pokemon_data[member_data.pokemon_id - 1]['name']
+                # member_data.url = pokeapi_url + str(member_data.pokemon_id)
+                results = [member_data]
+            except models.TeamMembersT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
-        else:
-            team_member = models.TeamMembersT.objects.all().values()
-            many = True
-        if many: 
-            paginator = PageNumberPagination()
-            results = paginator.paginate_queryset(team_member, request)
         else: 
-            results = team_member
-        team_member = serializers.TeamSerializer(results, many=many).data
-        return Response(team_member)
+            member_data = models.TeamMembersT.objects.all().order_by('member_id')
+            results = member_data.annotate(url = functions.Concat(Value(pokeapi_url), 'pokemon_id', output_field=TextField()))
+        
+        for index in range(len(results)): 
+            results[index].name = pokemon_data[index]['name']
+            results[index].url = pokemon_data[index]['url']
 
-    def post(self, request): 
 
-        return Response()
+        results = self.paginate_queryset(results, request)
+        results = serializers.TeamMemberSerializer(results, many=True).data
+        return Response(
+            {
+                'count':self.page.paginator.count, 
+                'next':self.get_next_link(), 
+                'previous': self.get_previous_link(), 
+                'values': results
+            }, 
+            status=status.HTTP_200_OK
+        )
+
+    def post(self, request, **kwargs): 
+        serializer = serializers.TeamMemberSerializer(data=request.data)
+        if serializer.is_valid(): 
+            print("llegamos hasta aca")
+            new_member = models.TeamMembersT(
+                pokemon_id=serializer.data['pokemon_id'], 
+                team_id=models.TeamsDataT.objects.get(pk=serializer.data['team_id']).team_id
+            )
+            new_member.save()
+            new_member = serializers.TeamMemberSerializer([new_member]).data
+            return Response(
+                {
+                    'values':new_member
+                }, 
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request): 
         return Response()

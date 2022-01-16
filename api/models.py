@@ -18,7 +18,8 @@ class TeamsDataT(models.Model):
     team_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45)
     creation_date = models.DateTimeField(auto_now=True)
-    trainer_id = models.ForeignKey(TrainersDataT, models.DO_NOTHING, db_column='trainer_id')
+    trainer = models.ForeignKey(
+        TrainersDataT, on_delete=models.DO_NOTHING, db_column='trainer_id', related_name='teams')
 
     class Meta:
         managed = False
@@ -27,7 +28,8 @@ class TeamsDataT(models.Model):
 class TeamMembersT(models.Model):
     member_id = models.AutoField(primary_key=True)
     pokemon_id = models.IntegerField()
-    team_id = models.ForeignKey(TeamsDataT, models.DO_NOTHING, db_column='team_id')
+    teams = models.ForeignKey(
+        TeamsDataT, on_delete=models.DO_NOTHING, db_column='team_id', related_name='members')
 
     class Meta:
         managed = False

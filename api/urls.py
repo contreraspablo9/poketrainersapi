@@ -13,6 +13,6 @@ urlpatterns = [
     
     
     path('members/', views.TeamMembers.as_view(), name = 'members'),
-    path('members/<int:pk>', views.TeamMembers.as_view(), name = 'members'),
+    path('members/<int:pk>', views.TeamMembers.as_view(), name = 'members')
 
 ]
