@@ -9,10 +9,10 @@ urlpatterns = [
 
 
     path('teams/', views.Teams.as_view(), name = 'teams'),
-    path('teams/<int:pk>', views.Teams.as_view(), name = 'teams'),
+    path('teams/<int:pk>/', views.Teams.as_view(), name = 'teams'),
     
     
     path('members/', views.TeamMembers.as_view(), name = 'members'),
-    path('members/<int:pk>', views.TeamMembers.as_view(), name = 'members')
+    path('members/<int:pk>/', views.TeamMembers.as_view(), name = 'members')
 
 ]

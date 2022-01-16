@@ -75,41 +75,48 @@ class Trainers(APIView, PageNumberPagination):
 class Teams(APIView, PageNumberPagination): 
     ''' Pokemon teams administration '''
     def get(self, request, pk=None): 
-        many = False
         if pk is not None: 
             try: 
-                teams_data = models.TeamsDataT.objects.get(pk=pk)
+                team_data = models.TeamsDataT.objects.get(pk=pk)
+                results = [team_data]
             except models.TeamsDataT.DoesNotExist: 
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response(status = status.HTTP_404_NOT_FOUND)
         else: 
-            teams_data = models.TeamsDataT.objects.all().values()
-            many = True
-        if many: 
-            paginator = PageNumberPagination()
-            results = paginator.paginate_queryset(teams_data, request)
-        else: 
-            results = teams_data
-        teams_data = serializers.TeamSerializer(results, many=many).data
-        return Response(teams_data)
+            team_data = models.TeamsDataT.objects.all()
+            results = team_data
 
+        for index in range(len(results)): 
+            results[index].members_quantity = models.TeamMembersT.objects.filter(teams=results[index]).count()
+            print(results[index].members_quantity)
+        results = self.paginate_queryset(results, request)
+        results = serializers.TeamSerializer(results, many=True).data
+        return Response(
+            {
+                'count':self.page.paginator.count, 
+                'next':self.get_next_link(), 
+                'previous':self.get_previous_link(), 
+                'values':results
+            }, 
+            status=status.HTTP_200_OK
+        )
         
 
     def post(self, request, **kwargs): 
-        serializer = serializers.TeamSerializer(data=request.data)
+        serializer = serializers.PostTeamSerializer(data=request.data)
         if serializer.is_valid(): 
-            #el trainer_id es valido? 
-            trainer = models.TrainersDataT.objects.filter(pk=serializer.data['trainer_id'])
-            if len(trainer) == 0: 
-                return Response({'details':f"trainer with id: {serializer.data['trainer_id']} does not exist, please try with a valid trainer_id"}, status=status.HTTP_404_NOT_FOUND)
             new_team = models.TeamsDataT(
-                name = serializer.data['name'],
-                trainer_id=serializer.data['trainer_id']
+                name = serializer.data['name'], 
+                trainer = models.TrainersDataT.objects.get(pk=serializer.data['trainer_id'])
             )
             new_team.save()
             new_team = serializers.TeamSerializer(new_team).data
-            return Response(new_team, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response(
+                {'values':new_team},
+                status = status.HTTP_201_CREATED
+            )
+        else: 
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     def put(self, request): 
         return Response()
 
@@ -119,25 +126,22 @@ class Teams(APIView, PageNumberPagination):
 
 class TeamMembers(APIView,PageNumberPagination): 
     ''' Pokemon team members administration '''
+    pokeapi_url = 'https://pokeapi.co/api/v2/pokemon/'
     def get(self, request, pk=None, name=None): 
-        pokeapi_url = 'https://pokeapi.co/api/v2/pokemon/'
-        pokemon_data = fn.apicall(pokeapi_url + '?limit=1200')['results']
+        pokemon_data = fn.apicall(self.pokeapi_url + '?limit=1200')['results']
 
         if pk is not None: 
             try: 
                 member_data = models.TeamMembersT.objects.get(pk=pk)
-                # member_data.name = pokemon_data[member_data.pokemon_id - 1]['name']
-                # member_data.url = pokeapi_url + str(member_data.pokemon_id)
                 results = [member_data]
             except models.TeamMembersT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else: 
-            member_data = models.TeamMembersT.objects.all().order_by('member_id')
-            results = member_data.annotate(url = functions.Concat(Value(pokeapi_url), 'pokemon_id', output_field=TextField()))
+            results = models.TeamMembersT.objects.all().order_by('member_id')
         
         for index in range(len(results)): 
-            results[index].name = pokemon_data[index]['name']
-            results[index].url = pokemon_data[index]['url']
+            results[index].name = pokemon_data[results[index].pokemon_id - 1]['name']
+            results[index].url = pokemon_data[results[index].pokemon_id -1]['url']
 
 
         results = self.paginate_queryset(results, request)
@@ -153,22 +157,29 @@ class TeamMembers(APIView,PageNumberPagination):
         )
 
     def post(self, request, **kwargs): 
-        serializer = serializers.TeamMemberSerializer(data=request.data)
+        serializer = serializers.PostTeamMemberSerializer(data=request.data)
         if serializer.is_valid(): 
-            print("llegamos hasta aca")
+            team_instance = models.TeamsDataT.objects.get(pk=serializer.data['team_id'])
+
+            team_members = models.TeamMembersT.objects.filter(teams=team_instance).count()
+            if team_members >= 6:
+                return Response({'detail':f"Team {team_instance.name} has reached maximum members limit"}, status=status.HTTP_401_UNAUTHORIZED)
             new_member = models.TeamMembersT(
                 pokemon_id=serializer.data['pokemon_id'], 
-                team_id=models.TeamsDataT.objects.get(pk=serializer.data['team_id']).team_id
+                teams=team_instance
             )
             new_member.save()
-            new_member = serializers.TeamMemberSerializer([new_member]).data
+            pokemon_data = fn.apicall(self.pokeapi_url + str(new_member.pokemon_id))
+            new_member.name = pokemon_data['name']
+            new_member.url = self.pokeapi_url + str(new_member.pokemon_id)
+
+            new_member = serializers.TeamMemberSerializer(new_member).data
             return Response(
-                {
-                    'values':new_member
-                }, 
+                {'values':new_member}, 
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request): 
         return Response()
