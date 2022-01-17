@@ -15,6 +15,7 @@ class Trainers(APIView, PageNumberPagination):
     ''' Pokemon trainers administration '''
     def get(self, request, pk=None, alias=None): 
         if pk is not None: 
+            ''' when a primary key is given in url '''
             try: 
                 trainer_data = models.TrainersDataT.objects.get(pk=pk)
                 trainer_data.teams_quantity = models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id).count()
@@ -22,6 +23,7 @@ class Trainers(APIView, PageNumberPagination):
             except models.TrainersDataT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
         elif alias is not None: 
+            ''' when an alias is given in url '''
             try: 
                 trainer_data = models.TrainersDataT.objects.get(alias=alias)
                 trainer_data.teams_quantity = models.TeamsDataT.objects.filter(trainer_id=trainer_data.trainer_id).count()
@@ -29,6 +31,7 @@ class Trainers(APIView, PageNumberPagination):
             except models.TrainersDataT.DoesNotExist: 
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else: 
+            ''' No filter was provided ''' 
             trainer_data = models.TrainersDataT.objects.all()
             results = trainer_data.annotate(teams_quantity=Count('teams__team_id')).order_by('trainer_id')
         
@@ -205,14 +208,14 @@ class TeamMembers(APIView,PageNumberPagination):
 
     def put(self, request, pk=None, **kwargs): 
         @fn.put('member', Response, status, serializers.PostTeamMemberSerializer, models.TeamMembersT, request, pk)
-        def modify_team(member, data, serializer): 
+        def modify_member(member, data, serializer): 
             member.pokemon_id = data['pokemon_id']
             member.team_id = data['team_id']
             member.save()
             member = serializer(member).data
             return member
 
-        return modify_team()
+        return modify_member()
 
     def delete  (self, request, pk=None, **kwargs):
         return fn.delete('member', models.TeamMembersT, Response, serializers.TeamMemberSerializer, status, pk)

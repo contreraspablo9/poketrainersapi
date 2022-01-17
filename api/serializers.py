@@ -2,6 +2,7 @@ from rest_framework import serializers
 from api import models
 
 class TrainerSerializer(serializers.ModelSerializer): 
+    ''' Serializer for trainer data, works when creating, retrieving, updating and deleting  '''
     trainer_id = serializers.IntegerField(required=False)
     name = serializers.CharField()
     alias = serializers.CharField()
@@ -14,6 +15,7 @@ class TrainerSerializer(serializers.ModelSerializer):
         fields = ['trainer_id', 'name', 'alias', 'age', 'creation_date', 'teams_quantity']
 
 class TeamSerializer(serializers.ModelSerializer): 
+    ''' Serializer for team data, use only to retrieve '''
     team_id = serializers.IntegerField(required=False)
     name = serializers.CharField()
     creation_date = serializers.DateTimeField(required=False)
@@ -27,6 +29,7 @@ class TeamSerializer(serializers.ModelSerializer):
         depth = 1
 
 class TeamMemberSerializer(serializers.ModelSerializer): 
+    ''' Serializer for members data, use only to retrieve '''
     member_id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     pokemon_id = serializers.IntegerField()
@@ -40,9 +43,11 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         depth = 2
 
 class PostTeamMemberSerializer(serializers.Serializer): 
+    ''' Serializer for members data, use to create and update '''
     pokemon_id = serializers.IntegerField()
     team_id = serializers.IntegerField()
 
 class PostTeamSerializer(serializers.Serializer): 
+    ''' Serializer for team data, use to create and update '''
     name = serializers.CharField()
     trainer_id = serializers.CharField()

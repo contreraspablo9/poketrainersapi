@@ -1,7 +1,5 @@
 from django.db import models
 
-
-
 class TrainersDataT(models.Model):
     trainer_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45)

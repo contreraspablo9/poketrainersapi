@@ -2,10 +2,12 @@ from requests import get
 import json
 
 def apicall(url): 
+    ''' retrieve data from json api '''
     response = get(url).json()
     return response
 
 def delete(model_str, model, response, serializer, status, pk=None): 
+    ''' delete register '''
     if pk is None: 
         return response(
             {
@@ -23,6 +25,7 @@ def delete(model_str, model, response, serializer, status, pk=None):
     return response({'values':instance}, status=status.HTTP_202_ACCEPTED)
 
 def put(instance_str, response, status, rest_serializer, model, request, pk):
+    ''' update register overwriting its fields '''
     def add_params(make_changes): 
         def inner(): 
 
