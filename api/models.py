@@ -19,7 +19,7 @@ class TeamsDataT(models.Model):
     name = models.CharField(max_length=45)
     creation_date = models.DateTimeField(auto_now=True)
     trainer = models.ForeignKey(
-        TrainersDataT, on_delete=models.DO_NOTHING, db_column='trainer_id', related_name='teams')
+        TrainersDataT, on_delete=models.CASCADE, db_column='trainer_id', related_name='teams')
 
     class Meta:
         managed = False
@@ -29,7 +29,7 @@ class TeamMembersT(models.Model):
     member_id = models.AutoField(primary_key=True)
     pokemon_id = models.IntegerField()
     teams = models.ForeignKey(
-        TeamsDataT, on_delete=models.DO_NOTHING, db_column='team_id', related_name='members')
+        TeamsDataT, on_delete=models.CASCADE, db_column='team_id', related_name='members')
 
     class Meta:
         managed = False

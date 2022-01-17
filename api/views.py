@@ -9,6 +9,8 @@ from django.db.models import Count, Value, functions, TextField
 
 from api import functions as fn
 
+
+
 class Trainers(APIView, PageNumberPagination): 
     ''' Pokemon trainers administration '''
     def get(self, request, pk=None, alias=None): 
@@ -64,13 +66,13 @@ class Trainers(APIView, PageNumberPagination):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, **kwargs):
-
-        return Response()
-
-    def delete(self, request, pk=None, alias=None): 
+    def put(self, request, pk=None, alias=None): 
         print(request)
         return Response()
+   
+    def delete  (self, request, pk=None, **kwargs):
+        return fn.delete('trainer', models.TrainersDataT, Response, serializers.TrainerSerializer, status, pk)
+
 
 class Teams(APIView, PageNumberPagination): 
     ''' Pokemon teams administration '''
@@ -120,9 +122,8 @@ class Teams(APIView, PageNumberPagination):
     def put(self, request): 
         return Response()
 
-    def delete(self, request): 
-        
-        return Response()
+    def delete  (self, request, pk=None, **kwargs):
+        return fn.delete('team', models.TeamsDataT, Response, serializers.TeamSerializer, status, pk)
 
 class TeamMembers(APIView,PageNumberPagination): 
     ''' Pokemon team members administration '''
@@ -184,6 +185,5 @@ class TeamMembers(APIView,PageNumberPagination):
     def put(self, request): 
         return Response()
 
-    def delete(self, request): 
-        
-        return Response()
+    def delete  (self, request, pk=None, **kwargs):
+        return fn.delete('member', models.TeamMembersT, Response, serializers.TeamMemberSerializer, status, pk)
