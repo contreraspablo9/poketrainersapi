@@ -7,7 +7,7 @@ allows the users to manage Pokemon Teams in a simple but useful way.
 
  ## How to get started? 
 
-First make sure you have alredy installed PostgreSQL, psycopg2 and djangorestframework libraries installed
+First make sure you have alredy installed PostgreSQL database server as well as psycopg2 and djangorestframework libraries installed
 
 Then you will need to create a new database into postgresql server with the name 'poketrainers_db'.
 After that, restore this database from the 'db_backup' file which is stored in the project folder
