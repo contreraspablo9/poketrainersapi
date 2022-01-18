@@ -35,6 +35,8 @@ which will start the django developments server..
 if you see the mesage: 'starting development server at http://xxx.x.x.x:xxxx/'
 then congratulations! It means you succesfully ran the API!!!
 
+(note that you should replace the X for the ip of your django development server and port)
+
  ## USAGE
 
 To understand how the API works, you should know that there are 3 classes, which are related to 
