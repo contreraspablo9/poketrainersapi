@@ -18,10 +18,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'poketrainers_db',  
-        'USER': 'postgres',            <----
-        'PASSWORD': 'postgres',        <---- Modify this
-        'HOST': 'localhost',           <---- values!
-        'PORT': '5432',                <----
+        'USER': 'postgres',           
+        'PASSWORD': 'postgres',       
+        'HOST': 'localhost',          
+        'PORT': '5432',              
     }
 }
 
@@ -69,9 +69,9 @@ to update this register you will have to send a PUT request to http://xxx.x.x.x:
 overwriting all the fields in the existing register, for example: 
 
 {
-    "name":"Pokemon trainer New Name",  <-- changed
-    "age":"18",                         <-- changed
-    "alias":"Poketrainer"               <-- this field will stay the same, also we need to add it
+    "name":"Pokemon trainer New Name",  
+    "age":"18",                         
+    "alias":"Poketrainer"               
 }
 
 to delete this trainer register you can send a DELETE request to http://xxx.x.x.x:xxxx/api/v1/trainers/1
